@@ -1,115 +1,112 @@
+using System.Collections.Generic;
 namespace MoogleEngine;
 public class DocumentVector
-{
-    string filePath;
-    public string FileName { get; private set; }
-    Dictionary<string, int> docTermFrequency;
-    double[] weights; // Document's terms weight using tf-idf
-
-    public DocumentVector(string filePath)
     {
-        this.FileName = Path.GetFileName(filePath);
-        this.filePath = filePath;
-        this.docTermFrequency = new Dictionary<string, int>();
-        // char[] delim = { ' ', '.', ',', '?', '!', ':', ';', '\'', '/', '\"', '\n', '(', ')', '<', '>', '-', '_', '*', '#', '\r' };
-        var delim = new char[] { ' ' };
-        string document = File.ReadAllText(filePath);
-        string[] terms = document.ToLower().Split(delim, StringSplitOptions.RemoveEmptyEntries);
+        public string FilePath{get; private set; }
+        public string FileName { get; private set; }
+        HashSet<string> docWords;
+        public HashSet<string> DocWords { get { return this.docWords; } }
+        Dictionary<string, double> docTermFrequency;
+        double[] weights;
+        public double Score { get; set; }
+        double magnitude;
+        HashSet<int> nonZeroIndexes;
 
-        foreach (string term in terms)
+        public DocumentVector(string filePath)
         {
-            if (!docTermFrequency.ContainsKey(term))
-                docTermFrequency[term] = 0;
-            docTermFrequency[term]++;
-        }
-    }
+            this.FileName = Path.GetFileName(filePath);
+            this.FilePath = filePath;
+            string document = File.ReadAllText(filePath);
+            string[] terms = Tokenize(document);
+            var length = terms.Length;
+            this.docWords = new HashSet<string>(terms);
+            this.docTermFrequency = docWords.ToDictionary(term => term, term => 0.0);
+            this.magnitude = 0.0;
 
-    // Alternative Constructor for queries
-    public DocumentVector(string[] query)
-    {
-        this.docTermFrequency = new Dictionary<string, int>();
-
-        foreach (string term in query)
-        {
-            if (!docTermFrequency.ContainsKey(term))
-                docTermFrequency[term] = 0;
-            docTermFrequency[term]++;
-        }
-
-    }
-
-    public int Count { get { return docTermFrequency.Count; } }
-
-    public System.Collections.Generic.Dictionary<string, int>.KeyCollection Keys
-    {
-        get { return docTermFrequency.Keys; }
-    }
-
-    public double Magnitude
-    {
-        get
-        {
-            double magnitude = 0;
-            foreach (var weight in weights)
+            for (var i = 0; i < length; i++)
             {
-                if (weight != 0)
-                    magnitude += weight * weight;
-            }
-            return Math.Sqrt(magnitude);
-        }
-    }
-    public double Score { get; set; }
-
-    public void SetWeightsInCorpus(Dictionary<string, double> vocabulary)
-    {
-        this.weights = new double[vocabulary.Count];
-        int i = 0;
-
-        foreach (var term in vocabulary.Keys)
-        {
-            if (!docTermFrequency.ContainsKey(term))
-            {
-                weights[i] = 0;
-                i++;
-            }
-            else
-            {
-                double tf = docTermFrequency[term] / docTermFrequency.Count;
-                double idf = vocabulary[term];
-                weights[i] = tf * idf;
-                i++;
+                var term = terms[i];
+                docTermFrequency[term] += (double)1/length;
             }
         }
-    }
 
-
-    public void Normalize()
-    {
-        for (int i = 0; i < weights.Length; i++)
-            weights[i] /= Magnitude;
-    }
-
-    public double InnerProduct(DocumentVector other)
-    {
-        double product = 0;
-
-        for (int i = 0; i < other.weights.Length; i++)
+        // Alternative Constructor for queries
+        public DocumentVector(string[] queryTerms)
         {
-            if (this.weights[i] != 0 && other.weights[i] != 0)
-                product += this.weights[i] * other.weights[i];
+            var length = queryTerms.Length;
+            this.docWords = new HashSet<string>(queryTerms);
+            this.docTermFrequency = docWords.ToDictionary(term => term, term => 0.0);
+            this.magnitude = 0.0; 
+            for (int i = 0; i < length; i++)
+            {
+                string term = queryTerms[i];
+                docTermFrequency[term]++;
+            }
         }
 
-        return product;
-    }
+        public void SetWeightsInCorpus(HashSet<string> corpusWords, Dictionary<string, double> vocabulary)
+        {
+            this.weights = new double[corpusWords.Count];
+            this.nonZeroIndexes = new HashSet<int>();
 
-    public static double operator *(DocumentVector v1, DocumentVector v2)
-    {
-        return v1.InnerProduct(v2);
-    }
+            int i = 0;
+            foreach (var term in corpusWords)
+            {
+                if (!this.docWords.Contains(term))
+                {
+                    weights[i] = 0.0;
+                    i++;
+                }
+                else
+                {
+                    double tf = docTermFrequency[term];
+                    double idf = vocabulary[term];
+                    weights[i] = tf * idf;
+                    magnitude += weights[i] * weights[i];
+                    nonZeroIndexes.Add(i);
+                    i++;
+                }
+            }
+        }
 
+        public void Normalize()
+        {
+            magnitude = Math.Sqrt(magnitude);
+            foreach (var index in nonZeroIndexes)
+            {
+                weights[index] /= magnitude;
+            }
+        }
 
-    public static double Similarity(DocumentVector v1, DocumentVector v2)
-    {
-        return v1 * v2;
-    }
+        public double InnerProduct(DocumentVector other)
+        {
+            double product = 0.0;
+            var indexes = new HashSet<int>(this.nonZeroIndexes);
+            indexes.IntersectWith(other.nonZeroIndexes);
+            
+            if(indexes.Count == 0) return 0.0;
+
+            foreach (var index in indexes)
+                product += this.weights[index] * other.weights[index];
+
+            return product;
+        }
+
+        public static double Similarity(DocumentVector v1, DocumentVector v2)
+        {
+            return v1.InnerProduct(v2);
+        }
+
+        public static string[] Tokenize(string text)
+        {
+            string[] tokens = text.ToLower().Split(" ", StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                string input = tokens[i];
+                string word = new string(input.SkipWhile(c => !char.IsLetterOrDigit(c)).TakeWhile(c => char.IsLetterOrDigit(c)).ToArray());
+                tokens[i] = word;
+            }
+            return tokens;
+        }
 }
