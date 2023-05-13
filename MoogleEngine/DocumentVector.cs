@@ -2,8 +2,8 @@ using System.Collections.Generic;
 namespace MoogleEngine;
 public class DocumentVector
     {
-        public string FilePath{get; private set; }
-        public string FileName { get; private set; }
+        public string FileName { get; set; }
+        public string FileText { get; private set; }
         HashSet<string> docWords;
         public HashSet<string> DocWords { get { return this.docWords; } }
         Dictionary<string, double> docTermFrequency;
@@ -12,16 +12,13 @@ public class DocumentVector
         double magnitude;
         HashSet<int> nonZeroIndexes;
 
-        public DocumentVector(string filePath)
+        public DocumentVector(string docText)
         {
-            this.FileName = Path.GetFileName(filePath);
-            this.FilePath = filePath;
-            string document = File.ReadAllText(filePath);
-            string[] terms = Tokenize(document);
+            this.FileText = docText;
+            string[] terms = Tokenize(docText);
             var length = terms.Length;
             this.docWords = new HashSet<string>(terms);
             this.docTermFrequency = docWords.ToDictionary(term => term, term => 0.0);
-            this.magnitude = 0.0;
 
             for (var i = 0; i < length; i++)
             {
@@ -30,24 +27,11 @@ public class DocumentVector
             }
         }
 
-        // Alternative Constructor for queries
-        public DocumentVector(string[] queryTerms)
-        {
-            var length = queryTerms.Length;
-            this.docWords = new HashSet<string>(queryTerms);
-            this.docTermFrequency = docWords.ToDictionary(term => term, term => 0.0);
-            this.magnitude = 0.0; 
-            for (int i = 0; i < length; i++)
-            {
-                string term = queryTerms[i];
-                docTermFrequency[term]++;
-            }
-        }
-
-        public void SetWeightsInCorpus(HashSet<string> corpusWords, Dictionary<string, double> vocabulary)
+        public void SetWeightsInCorpus(HashSet<string> corpusWords, Dictionary<string, double> idfs)
         {
             this.weights = new double[corpusWords.Count];
             this.nonZeroIndexes = new HashSet<int>();
+            this.magnitude = 0.0;
 
             int i = 0;
             foreach (var term in corpusWords)
@@ -60,7 +44,7 @@ public class DocumentVector
                 else
                 {
                     double tf = docTermFrequency[term];
-                    double idf = vocabulary[term];
+                    double idf = idfs[term];
                     weights[i] = tf * idf;
                     magnitude += weights[i] * weights[i];
                     nonZeroIndexes.Add(i);

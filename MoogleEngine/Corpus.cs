@@ -9,54 +9,58 @@ namespace MoogleEngine;
 public class Corpus
 {
     string[] documents; 
-    Dictionary<string, double> vocabulary;
-    public Dictionary<string, double> Vocabulary { get{return vocabulary;}}
+    Dictionary<string, double> idfs;
+    public Dictionary<string, double> IDFs { get{return idfs;}}
     DocumentVector[] vectorList; 
-    HashSet<string> words;
-    public HashSet<string> Words { get{ return words;}}
+    HashSet<string> vocabulary;
+    public HashSet<string> Vocabulary { get{ return vocabulary;}}
     
     
-    public Corpus(string ContentPath)
+    public Corpus(string contentPath)
     {
         System.Console.WriteLine("Setting Corpus");
         var timer = new Stopwatch(); timer.Start();
-
-        this.documents = Directory.GetFiles(ContentPath, "*.txt");
-        this.vocabulary = new Dictionary<string, double>();
+        
+        this.documents = Directory.GetFiles(contentPath, "*.txt");
+        this.idfs = new Dictionary<string, double>();
         this.vectorList = new DocumentVector[documents.Length];
-        this.words = new HashSet<string>();
+        this.vocabulary = new HashSet<string>();
 
         for (int i = 0; i < documents.Length; i++)
         {
             var document = documents[i];
+            var docText = File.ReadAllText(document);
+            DocumentVector docVector = new DocumentVector(docText);
+            docVector.FileName = Path.GetFileName(document);
+            
 
-            DocumentVector docVector = new DocumentVector(document);
-
-            // Add all terms in the current doc to the vocabulary and determines how many documents contains each term
+            // Add all words in the current document to the vocabulary  
+            // and count how many documents contains each word
             foreach (var word in docVector.DocWords)
             {
-                if (!this.words.Contains(word))
+                if (!this.vocabulary.Contains(word))
                 {
-                    this.words.Add(word);
-                    vocabulary[word] = 0.0;
+                    this.vocabulary.Add(word);
+                    this.idfs[word] = 0;
                 }
-                vocabulary[word]++;
+                idfs[word]++;
             }
 
             vectorList[i] = docVector;
         }
 
-        // Calculate IDF and assign it as the value of each terms in vocabulary
-        foreach (var term in this.words)
+        // Calculate IDF and assign it as the value of each term in idfs
+        var stopWordThreshold = Math.Log(100/95);
+        foreach (var term in this.vocabulary)
         {
-            var idf = Math.Log(documents.Length / vocabulary[term]);
-            vocabulary[term] = idf;
+            var idf = Math.Log(documents.Length / idfs[term]);
+            idfs[term] = (idf > stopWordThreshold) ? idf : 0;
         }
 
         // Set vectors' weights
         for (int i = 0; i < vectorList.Length; i++)
         {
-            vectorList[i].SetWeightsInCorpus(words, vocabulary);
+            vectorList[i].SetWeightsInCorpus(vocabulary, idfs);
             vectorList[i].Normalize();
         }
 
@@ -78,8 +82,9 @@ public class Corpus
     {
         get
         {
+            // Apply Search Operators
             Array.Sort(this.vectorList, (doc1, doc2) => doc2.Score.CompareTo(doc1.Score));
-            DocumentVector[] searchRanking = vectorList.TakeWhile(doc => doc.Score > 0.0).ToArray();
+            DocumentVector[] searchRanking = vectorList.TakeWhile(doc => doc.Score > 0.001).ToArray();
             return searchRanking;
         }
     }

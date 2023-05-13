@@ -1,6 +1,7 @@
 using System.IO;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MoogleEngine;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,4 +24,6 @@ app.UseRouting();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+Moogle.SetCorpus();
 app.Run();
