@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 namespace MoogleEngine;
+
+
 public class DocumentVector
     {
         public string FileName { get; set; }
@@ -11,6 +13,7 @@ public class DocumentVector
         public double Score { get; set; }
         double magnitude;
         HashSet<int> nonZeroIndexes;
+
 
         public DocumentVector(string docText)
         {
@@ -62,28 +65,22 @@ public class DocumentVector
             }
         }
 
-        public double InnerProduct(DocumentVector other)
+        public static double Similarity(DocumentVector v, DocumentVector w)
         {
             double product = 0.0;
-            var indexes = new HashSet<int>(this.nonZeroIndexes);
-            indexes.IntersectWith(other.nonZeroIndexes);
+            var indexes = new HashSet<int>(v.nonZeroIndexes);
+            indexes.IntersectWith(w.nonZeroIndexes);
             
             if(indexes.Count == 0) return 0.0;
 
             foreach (var index in indexes)
-                product += this.weights[index] * other.weights[index];
-
+                product += v.weights[index] * w.weights[index];
             return product;
-        }
-
-        public static double Similarity(DocumentVector v1, DocumentVector v2)
-        {
-            return v1.InnerProduct(v2);
         }
 
         public static string[] Tokenize(string text)
         {
-            string[] tokens = text.ToLower().Split(" ", StringSplitOptions.RemoveEmptyEntries);
+            string[] tokens = text.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             for (int i = 0; i < tokens.Length; i++)
             {

@@ -10,7 +10,8 @@ public static class Snippet
     static string lowerText;
     static string lowerQuery;
 
-    public static string GetSnippet(DocumentVector queryVector, DocumentVector docVector, Dictionary<string, double> idfs)
+    public static string GetSnippet(DocumentVector queryVector, DocumentVector docVector, 
+                                                                HashSet<string> vocabulary)
     {
 
         lowerQuery = queryVector.FileText.ToLower();
@@ -28,16 +29,12 @@ public static class Snippet
         // 2.1) Determine query relevant words towards the document
         var queryRelevantWords = new HashSet<string>(queryVector.DocWords);
         queryRelevantWords.IntersectWith(docVector.DocWords);
+        queryRelevantWords.IntersectWith(vocabulary);
         var allQueryIndexes = new HashSet<int>();
 
+        // 2.2) Determine all the indexes at which query relevant words appears in the text
         foreach (var word in queryRelevantWords)
         {
-            if (idfs[word] < 0.1)
-                queryRelevantWords.Remove(word);
-
-            // 2.2) Determine all the indexes at which query relevant words appears in the text
-            if (queryRelevantWords.Contains(word))
-            {
                 int index = 0;
                 while (true)
                 {
@@ -47,11 +44,10 @@ public static class Snippet
                     allQueryIndexes.Add(index);
                     index++;
                 }
-            }
         }
 
-        // 2.3) Search best matching piece of document text considering the piece of the text
-        // which contains more relevant words of the query 
+        // 2.3) Search best matching piece of document text considering the best piece  
+        // the one containing more relevant words of the query 
 
         int bestMatchCount = 0, bestMatchIndex = 0;
 
@@ -59,7 +55,7 @@ public static class Snippet
         {
             int matchCount = 0;
             foreach (var otherIndex in allQueryIndexes)
-                if (Math.Abs(otherIndex - index) <= 40)
+                if (Math.Abs(otherIndex - index) <= 50)
                     matchCount++;
 
             if (matchCount > bestMatchCount)
