@@ -32,7 +32,7 @@ public static class SearchOperators
 
     public static void SetMarkers(string query)
     {
-        var queryTerms = query.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var queryTerms = query.ToLower().Split();
 
         for (var i = 0; i < queryTerms.Length; i++)
         {
@@ -41,14 +41,17 @@ public static class SearchOperators
             switch (op)
             {
                 case '!':
+                    nonExistenceMarkers = new HashSet<string>();
                     nonExistenceMarkers.Add(TakeWord(term));
                     operationsSwitch[0] = true;
                     break;
                 case '^':
+                    existenceMarkers = new HashSet<string>();
                     existenceMarkers.Add(TakeWord(term));
                     operationsSwitch[1] = true;
                     break;
                 case '*':
+                    importanceMarkers = new HashSet<(string word, int count)>();
                     var word = TakeWord(term);
                     var count = 1;
                     for (var j = 1; j < term.Length; j++)
@@ -62,6 +65,7 @@ public static class SearchOperators
 
                     break;
                 case '~':
+                    distanceMarkers = new HashSet<(string, string)>();
                     var marker1 = TakeWord(queryTerms[i - 1]);
                     var marker2 = TakeWord(term);
                     (string, string) marker = (marker1, marker2);
@@ -100,8 +104,8 @@ public static class SearchOperators
         var scoreModifier = 0.0f;
         foreach (var marker in nonExistenceMarkers)
         {
-            if (doc.DocWords.Contains(marker)) ;
-            scoreModifier -= 1.0f;
+            if (doc.Words.Contains(marker)) 
+                scoreModifier -= 1.0f;
         }
         return scoreModifier;
     }
@@ -111,8 +115,8 @@ public static class SearchOperators
         var scoreModifier = 0.0f;
         foreach (var marker in existenceMarkers)
         {
-            if (doc.DocWords.Contains(marker)) ;
-            scoreModifier += 1.0f;
+            if (!doc.Words.Contains(marker)) 
+                scoreModifier -= 1.0f;
         }
         return scoreModifier;
     }
@@ -123,8 +127,8 @@ public static class SearchOperators
 
         foreach (var marker in importanceMarkers)
         {
-            if (doc.DocWords.Contains(marker.word)) ;
-            scoreModifier += 0.35f * marker.count;
+            if (doc.Words.Contains(marker.word)) 
+                scoreModifier += 0.35f * marker.count;
         }
         return scoreModifier;
     }
@@ -132,7 +136,7 @@ public static class SearchOperators
     private static float ApplyDistanceOp(DocumentVector doc)
     {
         foreach (var pair in distanceMarkers)
-            if (!doc.DocWords.Contains(pair.Item1) || !doc.DocWords.Contains(pair.Item1))
+            if (!doc.Words.Contains(pair.Item1) || !doc.Words.Contains(pair.Item1))
                 return 0.0f;
 
         var scoreModifier = 0.0f;

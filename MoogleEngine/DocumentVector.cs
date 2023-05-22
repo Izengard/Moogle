@@ -1,14 +1,15 @@
 using System.Collections.Generic;
 namespace MoogleEngine;
 
-
 public class DocumentVector
     {
         public string FileName { get; set; }
         public string FileText { get; private set; }
-        HashSet<string> docWords;
-        public HashSet<string> DocWords { get { return this.docWords; } }
+        public string[] Terms { get;}
+        HashSet<string> words;
+        public HashSet<string> Words { get { return this.words; } }
         Dictionary<string, double> docTermFrequency;
+        public Dictionary<string, double> TFs { get { return docTermFrequency; } }
         double[] weights;
         public double Score { get; set; }
         double magnitude;
@@ -18,14 +19,14 @@ public class DocumentVector
         public DocumentVector(string docText)
         {
             this.FileText = docText;
-            string[] terms = Tokenize(docText);
-            var length = terms.Length;
-            this.docWords = new HashSet<string>(terms);
-            this.docTermFrequency = docWords.ToDictionary(term => term, term => 0.0);
+            this.Terms = Tokenize(docText);
+            var length = Terms.Length;
+            this.words = new HashSet<string>(Terms);
+            this.docTermFrequency = words.ToDictionary(term => term, term => 0.0);
 
             for (var i = 0; i < length; i++)
             {
-                var term = terms[i];
+                var term = Terms[i];
                 docTermFrequency[term] += (double)1/length;
             }
         }
@@ -39,14 +40,14 @@ public class DocumentVector
             int i = 0;
             foreach (var term in corpusWords)
             {
-                if (!this.docWords.Contains(term))
+                if (!this.words.Contains(term))
                 {
                     weights[i] = 0.0;
                     i++;
                 }
                 else
                 {
-                    double tf = docTermFrequency[term];
+                    double tf = this.docTermFrequency[term];
                     double idf = idfs[term];
                     weights[i] = tf * idf;
                     magnitude += weights[i] * weights[i];
@@ -80,7 +81,8 @@ public class DocumentVector
 
         public static string[] Tokenize(string text)
         {
-            string[] tokens = text.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            char[] delim = {' ', '\n', '.', '!', '?'};
+            string[] tokens = text.ToLower().Split(delim, StringSplitOptions.RemoveEmptyEntries);
 
             for (int i = 0; i < tokens.Length; i++)
             {

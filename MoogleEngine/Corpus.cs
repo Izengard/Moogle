@@ -1,8 +1,10 @@
+using System.IO;
 using System.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MoogleEngine;
 
 namespace MoogleEngine;
 
@@ -12,10 +14,13 @@ public class Corpus
     Dictionary<string, double> idfs;
     public Dictionary<string, double> IDFs { get { return idfs; } }
     DocumentVector[] vectorList;
+    public DocumentVector[] VectorList { get { return vectorList; } }
+
     HashSet<string> vocabulary;
     public HashSet<string> Vocabulary { get { return vocabulary; } }
 
 
+    #region Main Constructor
     public Corpus(string contentPath)
     {
         System.Console.WriteLine("Setting Corpus");
@@ -36,7 +41,7 @@ public class Corpus
 
             // Add all words in the current document to the vocabulary  
             // and count how many documents contains each word
-            foreach (var word in docVector.DocWords)
+            foreach (var word in docVector.Words)
             {
                 if (!this.vocabulary.Contains(word))
                 {
@@ -74,9 +79,11 @@ public class Corpus
         var time = timer.ElapsedMilliseconds / 1000;
         System.Console.WriteLine("Corpus  has been loaded in {0} seconds", time);
     }
+    #endregion
 
 
-    // Ranking Documents by its scores towards the query considering the search operators
+    #region Ranking Methods
+    // Rank Documents by its scores towards the query considering the search operators
     public void RankDocumentsByQuery(DocumentVector query)
     {
         for (var i = 0; i < this.vectorList.Length; i++)
@@ -94,7 +101,6 @@ public class Corpus
         }
     }
 
-
     public DocumentVector[] Ranking
     {
         get
@@ -105,3 +111,4 @@ public class Corpus
         }
     }
 }
+#endregion
