@@ -15,12 +15,12 @@ public class Corpus
     public Dictionary<string, double> IDFs { get { return idfs; } }
     DocumentVector[] vectorList;
     public DocumentVector[] VectorList { get { return vectorList; } }
-
     HashSet<string> vocabulary;
     public HashSet<string> Vocabulary { get { return vocabulary; } }
+    public HashSet<string> stopWords { get;}
 
 
-    #region Main Constructor
+    #region Constructor
     public Corpus(string contentPath)
     {
         System.Console.WriteLine("Setting Corpus");
@@ -30,6 +30,8 @@ public class Corpus
         this.idfs = new Dictionary<string, double>();
         this.vectorList = new DocumentVector[documents.Length];
         this.vocabulary = new HashSet<string>();
+        this.stopWords = new HashSet<string>();
+        
 
         for (int i = 0; i < documents.Length; i++)
         {
@@ -55,7 +57,7 @@ public class Corpus
         }
 
         // Calculate IDFs and remove stop words
-        var stopWordThreshold = Math.Log((double)100 / 95);
+        var stopWordThreshold = Math.Log((double)100 / 85);
         foreach (var term in this.vocabulary)
         {
             var idf = Math.Log(documents.Length / idfs[term]);
@@ -63,6 +65,7 @@ public class Corpus
                 idfs[term] = idf;
             else
             {
+                stopWords.Add(term);
                 idfs.Remove(term);
                 vocabulary.Remove(term);
             }
@@ -84,20 +87,19 @@ public class Corpus
 
     #region Ranking Methods
     // Rank Documents by its scores towards the query considering the search operators
-    public void RankDocumentsByQuery(DocumentVector query)
+    public void RankDocumentsBySimilarity(DocumentVector query)
     {
         for (var i = 0; i < this.vectorList.Length; i++)
             vectorList[i].Score = DocumentVector.Similarity(vectorList[i], query);
     }
 
-    public void RankDocumentsWithOperators(DocumentVector query)
+    public void RankDocumentsWithOperators()
     {
         for (var i = 0; i < this.vectorList.Length; i++)
         {
             var doc = vectorList[i];
             var scoreModifier = SearchOperators.ApplySearchOperators(doc);
-            var similarity = DocumentVector.Similarity(doc, query);
-            doc.Score = scoreModifier * similarity;
+            doc.Score *= scoreModifier;
         }
     }
 

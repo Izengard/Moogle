@@ -5,7 +5,7 @@ public class DocumentVector
     {
         public string FileName { get; set; }
         public string FileText { get; private set; }
-        public string[] Terms { get;}
+        public string[] Terms { get; set;}
         HashSet<string> words;
         public HashSet<string> Words { get { return this.words; } }
         Dictionary<string, double> docTermFrequency;

@@ -50,7 +50,7 @@ public static class Snippet
         static int GetIndexOf(string word, int start)
         {
             start = lowerText.IndexOf(word, start);
-            if (start == -1) return start;
+            if (start == -1) return -1;
 
             int end = start + word.Length;
             while (start > 0 && char.IsLetterOrDigit(lowerText[start - 1]))
@@ -68,16 +68,7 @@ public static class Snippet
     {
         int start = (index - 40 > 0) ? index - 40 : 0;
         int end = (index + 40 < documentText.Length) ? index + 40 : documentText.Length;
-        string documentTextPiece = lowerText.Substring(start, end - start);
-
-        return ExtractFullSentence(documentTextPiece);
-    }
-
-    static string ExtractFullSentence(string str)
-    {
-        int start = lowerText.IndexOf(str);
-        int end = SentenceEnding(start + 40);
-        end = (end < documentText.Length) ? end : documentText.Length;
+        end = SentenceEnding(end);
         start = SentenceBeginning(start);
         var result = documentText.Substring(start, end - start);
         return MyTrim(result);
@@ -85,18 +76,18 @@ public static class Snippet
 
     static int SentenceEnding(int start)
     {
-        var endMarks = new HashSet<char>() { '.', '?', ';', ':', '!' };
+        var endMarks = new HashSet<char>() { '.', '?', ';', '!' };
         for (int i = start; i < lowerText.Length; i++)
         {
             if (endMarks.Contains(lowerText[i]))
-                return i - 1;
+                return i;
         }
         return lowerText.Length;
     }
 
     static int SentenceBeginning(int start)
     {
-        var endMarks = new HashSet<char>() { '.', '?', ';', ':', '!' };
+        var endMarks = new HashSet<char>() { '.', '?', ';', '!' };
         for (int i = start; i > 0; i--)
         {
             if (endMarks.Contains(lowerText[i]))
@@ -113,9 +104,6 @@ public static class Snippet
     }
     
 }
-
-
-
 
 
     // In DEVELOPMENT
