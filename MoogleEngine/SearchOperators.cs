@@ -18,19 +18,24 @@ public static class SearchOperators
     // 1            Existence
     // 2            Importance
     // 3            Distance
-    // 4            QueryContainsOperators
+   
 
+    /// <summary>Determina si la qery contiene operadores de busqueda. Crea un conjunto con los caracteres de la query
+    ///y lo interseca con el conjunto de los caracteres de los operadores </summary>
+    /// <param name="query">Consulta introducida por el usuario </param>
     public static bool QueryContainsOperators(string query)
     {
         var queryChars = new HashSet<char>(query);
         queryChars.IntersectWith(operators);
         if (queryChars.Count == 0)
             return false;
-        operationsSwitch = new bool[5];
-        operationsSwitch[4] = true;
         return true;
     }
 
+    /// <summary>Determina las palabras operandos, las que se denominaron markers
+    /// crea un array de las palabras de la query y analiza el primer caraceter de cada 
+    /// una de ellas usando Switch</summary>
+    /// <param name="query">Consulta introducida por el usuario </param>
     public static void SetMarkers(string query)
     {
         var queryTerms = query.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -42,8 +47,8 @@ public static class SearchOperators
         for (var i = 0; i < queryTerms.Length; i++)
         {
             var term = queryTerms[i];
-            var op = term[0];
-            switch (op)
+            var firstChar = term[0];
+            switch (firstChar)
             {
                 case '!':
                     nonExistenceMarkers = new HashSet<string>();
@@ -76,19 +81,22 @@ public static class SearchOperators
                     (string, string) marker = (marker1, marker2);
                     distanceMarkers.Add(marker);
                     operationsSwitch[3] = true;
-                    break;
+                    break;  
 
                 default:
                     continue;
             }
         }
     }
+    // Depura la palabra de otros caracteres no alfanumericos como los operadores
     private static string TakeWord(string input)
     {
         string word = new string(input.SkipWhile(c => !char.IsLetterOrDigit(c)).TakeWhile(c => char.IsLetterOrDigit(c)).ToArray());
         return word;
     }
 
+    /// <summary>Calcula el scoreModifier aplicando los operadores de busqueda que se determinaron en SetMarkers </summary>
+    /// <param name="doc">Vector del documento a operar</param>
     public static float ApplySearchOperators(DocumentVector doc)
     {
         var scoreModifier = 0.0f;
@@ -98,11 +106,10 @@ public static class SearchOperators
             scoreModifier += ApplyExistenceOp(doc);
         if (operationsSwitch[2])
             scoreModifier += ApplyImportanceOp(doc);
-        if (operationsSwitch[3])
+        if (operationsSwitch[3]) 
             scoreModifier += ApplyDistanceOp(doc);
         return 1.0f + scoreModifier;
     }
-
 
     private static float ApplyNonExistenceOp(DocumentVector doc)
     {
@@ -155,9 +162,13 @@ public static class SearchOperators
         return scoreModifier;
 
     }
+    /// <summary>Determina la menor distancia entre dos palabras dadads en un documento</summary>
+    /// <param name="docWords">Array de las palabras del documento</param>
+    /// <param name="pair">Tupla que contiene las dos palabras entre las cuales se determina la distancia</param>
     private static int ShortestDistance(string[] docWords, (string, string) pair)
     {
-        string word1 = pair.Item1, word2 = pair.Item2;
+        string word1 = pair.Item1;
+        string word2 = pair.Item2;
         int i1 = -1, i2 = -1;
         int shortest = int.MaxValue;
         int distance = 0;
