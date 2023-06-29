@@ -54,7 +54,6 @@ public static class Moogle
         timer.Stop();
         var time = timer.ElapsedMilliseconds / 1000;
         System.Console.WriteLine("Search completed in {0} seconds", time);
-        PrintScores(items);
         var searchResult = new SearchResult(items);
         // if (suggestion != query)
         //     searchResult.Suggestion = suggestion;
@@ -67,9 +66,5 @@ public static class Moogle
         corpus = new Corpus(Path.Combine("..", "Content"));
     }
 
-    // private static void PrintScores(SearchItem[] items)
-    // {
-    //     foreach (var item in items)
-    //         System.Console.WriteLine($"{item.Title} : {item.Score * 100}");
-    // }
+    
 }

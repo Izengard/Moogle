@@ -10,6 +10,12 @@ public static class Snippet
     static string documentText;
     static string lowerText;
 
+
+    /// <summary>Determines the most relevant subtext toward the query in the text </summary>
+    /// <param name="queryVector">Vector representation of query</param>
+    /// <param name="docVector">Vector representation of the document</param>
+    /// <retruns>Return a string, a subtext of the document in response of the query</returns>
+
     public static string GetSnippet(DocumentVector queryVector, DocumentVector docVector)
     {
         documentText = docVector.FileText;
@@ -20,13 +26,20 @@ public static class Snippet
         return GetTextPieceAround(bestIndex);
     }
 
+    /// <summary>Determines the most relevant word in the query that also appears in the document </summary>
+    /// <param name="queryVector">Vector representation of query</param>
+    /// <param name="docVector">Vector representation of the document</param>
+    /// <retruns>Return a string, the word in the query which higher weight in the corpus that is also in the document text</returns>
     static string MostRelevantWord(DocumentVector queryVector, DocumentVector docVector)
     {
+        // Find the common words between the query and the document
         var queryRelevantWords = new HashSet<string>(queryVector.Words);
         queryRelevantWords.IntersectWith(docVector.Words);
-        queryRelevantWords.IntersectWith(Moogle.corpus.Vocabulary); // To filter stopWords 
+        // Filter stopWords
+        queryRelevantWords.IntersectWith(Moogle.corpus.Vocabulary);  
 
         string bestWord = "";
+
         double bestWeight = double.MinValue;
         foreach (var word in queryRelevantWords)
         {
@@ -43,10 +56,14 @@ public static class Snippet
         return bestWord;
     }
 
+    /// <summary>Determines the most relevant word in the query that also appears in the document </summary>
+    /// <param name="word">string, a word in the text</param>
+    /// <retruns>Return an int,the first index of a given word of the document</returns>
+
     public static int GetIndexOf(string word)
     {
         return GetIndexOf(word, 0);
-
+        // Auxiliar function
         static int GetIndexOf(string word, int start)
         {
             start = lowerText.IndexOf(word, start);
