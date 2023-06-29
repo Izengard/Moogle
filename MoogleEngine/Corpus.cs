@@ -21,6 +21,7 @@ public class Corpus
 
 
     #region Constructor
+    // Class constructor. Load and process all the .txt files in the given path
     public Corpus(string contentPath)
     {
         System.Console.WriteLine("Setting Corpus");
@@ -86,13 +87,17 @@ public class Corpus
 
 
     #region Ranking Methods
-    // Rank Documents by its scores towards the query considering the search operators
+    
+    /// <summary>Asign a value to all DocumentVectors's scores given by cosine similarity
+    ///between the docuemnt and the query</summary>
+    /// <param name="query">Query typed by the user</param>
     public void RankDocumentsBySimilarity(DocumentVector query)
     {
         for (var i = 0; i < this.vectorList.Length; i++)
             vectorList[i].Score = DocumentVector.Similarity(vectorList[i], query);
     }
 
+    /// <summary>Modifies the documents' scores by factor given by the search operators</summary>
     public void RankDocumentsWithOperators()
     {
         for (var i = 0; i < this.vectorList.Length; i++)
@@ -103,6 +108,7 @@ public class Corpus
         }
     }
 
+    // Returns an arry of Document Vectors sorted by score
     public DocumentVector[] Ranking
     {
         get

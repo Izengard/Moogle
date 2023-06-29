@@ -9,6 +9,10 @@ public static class Moogle
 {
     public static Corpus corpus;
 
+    /// <summary>Main method. This method is called when the user presss the search button in the web 
+    /// app. It process the query, score the documents vector by the Cosine Similarity to the query,
+    /// creates and returns a the search result </summary>
+    /// <param name="query">String. Query typed by the user</param>
     public static SearchResult Query(string query)
     {
         
@@ -57,15 +61,15 @@ public static class Moogle
         return searchResult;
     }
 
-
+    /// <summary>Instantiate the Corpus class creating a corpus from the collection of documents</summary>
     public static void SetCorpus()
     {
         corpus = new Corpus(Path.Combine("..", "Content"));
     }
 
-    private static void PrintScores(SearchItem[] items)
-    {
-        foreach (var item in items)
-            System.Console.WriteLine($"{item.Title} : {item.Score * 100}");
-    }
+    // private static void PrintScores(SearchItem[] items)
+    // {
+    //     foreach (var item in items)
+    //         System.Console.WriteLine($"{item.Title} : {item.Score * 100}");
+    // }
 }

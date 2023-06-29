@@ -162,7 +162,7 @@ public static class SearchOperators
         return scoreModifier;
 
     }
-    /// <summary>Determina la menor distancia entre dos palabras dadads en un documento</summary>
+    /// <summary>Determina la menor distancia entre dos palabras dadas en un documento</summary>
     /// <param name="docWords">Array de las palabras del documento</param>
     /// <param name="pair">Tupla que contiene las dos palabras entre las cuales se determina la distancia</param>
     private static int ShortestDistance(string[] docWords, (string, string) pair)
