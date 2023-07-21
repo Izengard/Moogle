@@ -1,0 +1,612 @@
+\documentclass[a4paper,12pt,twocolumn]{article}
+\usepackage[spanish]{babel}
+\usepackage[left=2.5cm, right=2.5cm, top=3cm, bottom=3cm]{geometry}
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{minted}
+
+
+\begin{document}
+\title{Moogle!}
+\author{Jocdan L. López Mantecón \\ Facultad de Matemáticas y Computación, Universidad de la Habana}
+\date{Julio \\ 2023}
+\maketitle
+
+\begin{abstract}
+El objetivo de este proyecto es crear un motor de búsqueda de documentos de archivos txt
+basándose en el Modelo del Espacio Vectorial para la Recuperación de Información. Se realizó
+una revisión bibliográfica previa de la cual se decidieron los siguientes procedimientos: Cada
+documento se representa como un vector de sus términos en el Corpus de términos, constituido
+por todas las palabras de la colección de documentos. Como medida de la importancia de las
+palabras, se recurrió al factor TF-IDF. Así mismo, se trata la query como un pseudo-documento
+representado por su propio vector de términos del Corpus. Para la determinación de la similitud
+entre la query introducida por el usuario y los documentos de la colección se utilizó el indicador
+Similitud de Cosenos que da una medida de la distancia entre el vector query y los vectores-documento
+a partir de la amplitud del ángulo que forman estos dos vectores en el espacio
+vectorial de vectores-documento. Además, se generó un snippet para cada resultado de la
+búsqueda y se implementaron cuatro operadores de búsqueda que facilitan el control sobre la
+misma.
+Se analizaron estructuras de datos factibles para la ejecución del mismo donde
+resaltan, además de los conocidos array<T>, las colecciones List<T> y HashSet<T>
+destacándose este último por su elevado rendimiento temporal. También se estudió el tipo
+System.String y sus métodos para la generación de Snippets y las expresiones lambda
+\end{abstract}
+
+\section*{Objetivos}
+\begin{enumerate}
+    \item Crear un motor de búsqueda de documentos en formato .txt empleando el Modelo de
+    \item Espacios Vectoriales para la Recuperación de Información.
+    \item Generar un snippet para cada resultado de la búsqueda.
+    \item Implementar utilidades adicionales que mejoren la calidad de la búsqueda y el
+    control sobre la misma.
+    \end{enumerate}
+
+\section{Introducción}\label{sec:intro}
+
+\subsection{Modelo de Espacio Vectorial para la Recuperación de Información (MEV)}
+El modelo de espacio vectorial es una técnica estándar en la los Sistemas de Recuperación de
+Información, consiste en representar los documentos como vectores de las palabras que los
+constituyen. Se construye un vocabulario con todas las palabras de la colección de documentos
+de forma que no se repitan los términos y cada uno de estos términos representa una dimensión
+del espacio. Los vectores-documento representaran la importancia de cada término del
+vocabulario en el propio documento mediante su valor de peso, así mismo la query se trata
+como un pseudo-documento y se representa mediante un vector en el espacio. Luego, se
+emplean indicadores de similitud para determinar que documentos son similares a otros o a una
+query dada.
+
+\subsection{Term Frequency Inverse Document Frequency (TF-IDF):}
+Esta medida de peso de los términos se basa en dos medidas estadísticas:
+\begin{itemize}
+    \item \emph{Frecuencia de términos (TF):} mide la frecuencia relativa con la que un término aparece
+    en un documento, es decir, cuantas veces aparece el término en el documento
+    (frecuencia absoluta Nw) dividido por la cantidad total (Td) de palabras del documento. La
+    fórmula utilizada es:
+    
+    \begin{center}    
+    \begin{equation}
+        TF_w = \frac{N_w}{T_d}
+    \end{equation}
+    \end{center}
+    La intuición con esta medida es que los términos que aparecen más veces
+    probablemente sean más importantes para el contenido del documento.
+
+    \item \emph{Frecuencia inversa de documento (IDF):} Mide la importancia del término en la colección
+    de documentos, es decir, cuantos documentos de la colección contienen el término.
+    Se empleó la fórmula:
+        \begin{center}
+        \begin{equation}
+         IDF_w = \log_2(\frac{|D|}{|d_w|})   
+        \end{equation}
+        \end{center}
+
+    Dónde |D| es la cardinalidad de la colección de documentos, es decir, la cantidad total
+    de documentos en la colección y |dw| es la cantidad de documentos de la colección que
+    contienen el término. El logaritmo se utiliza para evitar asignar demasiado peso 
+    a los documentos que aparecen en muchos documentos y para que los términos que aparecen
+    en pocos documentos tengan un mayor peso.
+    La idea que subyace esta medida es que los términos que aparecen en muchos
+    documentos probablemente sean menos importantes y los que aparecen en menos
+    documentos son más específicos y más relevantes para la búsqueda
+\end{itemize}
+
+La medida TF-IDF asigna un peso a cada término en cada documento de la colección. El peso
+de un término se calcula multiplicando la frecuencia del término TF por la frecuencia inversa del
+documento IDF:
+    \begin{center}
+    \begin{equation}
+        weight = TF_w * IDF_w 
+    \end{equation}
+    \end{center}
+
+Una vez que se han calculado los pesos para cada término en cada documento de la colección
+se pueden utilizar para calcular la similitud entre una query y los documentos de la colección.
+En este caso se representan los documentos como un vector de pesos y se calcula la similitud
+de cosenos.
+
+\subsection{Similitud de Cosenos:}
+Es una técnica utilizada en la Recuperación de Información para comparar la similitud entre dos
+vectores, se basa en el ángulo entre los mismos. Cuanto menor sea el ángulo, mayor será la
+similitud entre los vectores. La similitud de cosenos se calcula como el coseno del ángulo entre
+los vectores mediante la fórmula:
+    \begin{center}
+    \begin{equation}
+        sim(A, B) = \frac{\overrightarrow{A} * \overrightarrow{B}}{||A|| * ||B||} 
+    \end{equation}
+    \end{center}
+
+Donde A y B son los vectores que se están comparando, * representa el producto punto de los
+vectores, y ||A||, ||B|| representan las magnitudes de los mismos.
+El producto punto entre dos vectores es la suma de los productos de los componentes
+correspondientes de los vectores. La magnitud de un vector es la raíz cuadrada de la suma de
+los cuadrados de sus componentes. La similitud de cosenos se puede calcular directamente a
+partir de los pesos de los términos en los vectores.
+    
+    \begin{center}
+    \begin{equation}
+        \overrightarrow{A} * \overrightarrow{B} = \Sigma(a_i * b_i)
+    \tag*{Producto Vectorial}
+    \end{equation}
+    \end{center}
+    
+    \begin{center}
+    \begin{equation}
+    \tag{Norma de un vector}
+        ||A|| = \sqrt{\Sigma a_i^2}
+    \end{equation}
+    \end{center}
+
+\subsection{Generando el snippet:}
+
+Para generar del snippet se decidió mostrar un subtexto del documento que contenga la palabra
+de la query de mayor importancia (mayor TF-IDF). b Se extrae inicialmente un snippet con un
+tamaño de 80 caracteres alrededor de la palabra mas importante de la query con respecto al
+documento y al corpus; a partir de este primer resultado seguimos tomando caracteres hasta
+llegar al comienzo y al final de la oración completa respectivamente buscando la primera
+aparición de los signos de puntuación más comunes que pueden delimitar una oración: “ ¿? .
+; ¡! ”
+
+\subsection{Operadores de Búsqueda:}
+Los operadores de búsqueda añaden opciones y control sobre los resultados de la búsqueda.
+Se escriben inmediatamente antes de la palabra sobre la cual se quiere aplicar el operador.
+Para su implementación se calcula un factor al que se nombró scoreModifier (sM) el cual es un
+modificador porcentual que multiplicará al valor de Similitud de Cosenos entre el vector
+documento y el vector query obteniéndose el resultado de Score final. Cada operador contribuye
+(si aparece en la query) al valor final del scoreModifier.
+    \begin{center}
+    \begin{equation}
+       sM = 1.00 + \^ 𝒎𝒐𝒅 + !𝒎𝒐𝒅 +  *𝒎𝒐𝒅 + ~𝒎𝒐𝒅 
+    \end{equation}
+    \end{center}
+
+Se implementaron cuatro operadores de búsqueda:
+\begin{enumerate}
+    \item  Existe ^ : Las palabras a la que se aplica a este operador debe aparecer en los
+    documentos que se muestran como resultados de la búsqueda. Si el documento a
+    evaluar no contine la palabra-operando (a las cuales se denominó markers) se
+    disminuye su score en un 100\%, en caso contrario permanece inalterado:
+
+    \item NoExiste ! : Los marcadores de este operador no deben aparecer en los resultados de
+    búsqueda. Si el documento contiene dicho marcador disminuye su score en 100\% en
+    caso contrario permanece inalterado:
+
+    \item Importancia *: Este operador se puede emplear N veces consecutivas al inicio de la
+    palabra. Por cada vez que se utilice se incrementa el score del documento que contenga
+    los marcadores de este operador en un 35\%.
+        \begin{center}
+        \begin{equation}
+            *𝒎𝒐𝒅 = N * 0.35
+        \end{equation}
+        \end{center}
+
+    \item Distancia~: Este es el único operador binario, se emplea para indicar dos palabras, la
+    distancia entre estas incrementa el score del documento de forma tal que a menor
+    distancia mayor es el incremento. Para utilizarlo escriba primero la primera palabra y
+    luego la segunda comenzando con el operador (Ej.: Harry ~vacaciones).
+    Se tuvo en cuenta que el tamaño de los distintos documentos difiere y esto podría sesgar
+    dicha medida de la distancia, por ello luego de calcular la distancia entre los términos en
+    caracteres, se normaliza la misma dividiéndola entre la cantidad total de caracteres del
+    documento. La función que caracteriza este operador es:
+        \begin{center}
+        \begin{equation}
+            ~𝒎𝒐𝒅 = 1.00 - \frac{dist(w_1,w_2)}{doc.Length}
+        \end{equation}
+        \end{center}
+    Donde $dist(w_1, w_2)$ es la menor distancia entre las dos palabras en el
+    documento y doc.Lenght es la cantidad total de caracteres del documento.
+    De esta forma, si la distancia entre las palabras es pequeña entonces el segundo término
+    de la expresión tiende a cero y el factor tiende a 1.00 (100\%); de lo contrario, si la
+    distancia es grande entonces el segundo término tiende a 1 y el factor tiende a 0%.
+
+\end{enumerate} 
+
+\subsection{Sugerencias:}
+Se implementó la funcionalidad Sugerencia basado en la Distancia de Edición o Distancia de
+Levenshtein. Si alguna palabra de la query no aparece en el vocabulario del corpus y no es una
+stopword entonces se calcula la distancia de edición entre dicha palabra y todos los términos
+del vocabulario y sustituimos esta con la palabra del vocabulario con menor distancia de edición.
+Luego se sustituye esta palabra en la query.
+\subsection{Distancia de Levenshtein o distancia de Edición}
+La Distancia de Levenshtein o distancia de Edición es una medida de que tan similares son dos
+strings. Se define como el mínimo número de transformaciones (insertar, eliminar o remplazar)
+que se necesitan para convertir uno de los strings en el otro.
+
+\subsection{Especifiaciones de Software}
+EL proyecto se desarrolló en el Sistema Operativo Windows 10 Pro y fue codificado en el editor
+de texto Visual Studio Code empleando C# como lenguaje de programación y el framework
+.NET SDK 7. 
+
+\subsection{Ejecutando el proyecto}
+\begin{enumerate}   
+\item Asegúrese de tener instalado .NET Core 7.
+\item Ir al directorio del proyecto “Moogle Project”.
+\item Copiar la base de datos (colección de documentos en formato .txt) a la carpeta Content
+\item Ejecutar en la terminal de Linux:
+        make dev
+    Si estás en Windows, desde la carpeta raíz del proyecto:
+    dotnet watch run --project MoogleServer
+\end{enumerate}
+
+
+\section{Clases Empleadas}\label{sec: classes}
+\subsection{Corpus:}
+ Se creó la clase Corpus, la misma representa la colección de documentos a través
+del conjunto de términos(palabras) que la componen y contiene al sistema de vectoresdocumento.
+\emph{Elementos de la clase:}
+\begin{enumerate}
+     
+    \item string[] documents;
+        Contiene un listado de todos los archivos txt que se encuentran en la carpeta Content.
+    \item Dictionary<string, double> idfs;
+        Este diccionario le asigna a cada palabra del corpus su valor de IDF.
+    \item public Dictionary<string, double> IDFs { get{return vocabulary;}}
+        Propiedad que regula el acceso al campo idfs.
+    \item DocumentVector[] vectorList;
+        Arreglo que contiene todos los documentos de la colección representado como vectores.
+    \item HashSet<string> vocabulary;
+        Conjunto que contiene todas las palabras de la colección. Se emplea un HashSet para
+        evitar repeticiones de términos y por su elevado rendimiento temporal en comparación
+        con otras estructuras de datos.
+    \item public HashSet<string> Vocabulary { get{ return words;}}
+        Propiedad que regula el acceso a la variable al campo vocabulary.
+    \item public Corpus(string ContentPath){…}
+        Constructor de la clase Corpus, recibe como argumento la dirección de la carpeta donde
+        se almacenan los archivos txt. Procesa todos los documentos convirtiéndolos en vectores
+        a la vez que conforma el vocabulario, los IDFs y asigna los pesos a cada termino en cada
+        documento.
+    \item public void RankDocumentsBySimilarity(DocumentVector query){…}
+        Método que recibe una query y le asigna a cada vector-documento un valor de Score
+        determinado por la Similitud de Cosenos. Este método se emplea cuando la query no
+        tiene operadores de búsqueda.
+    \item public void RankDocumentsWithOperators(DocumentVector query){…}
+        Este método se emplea para asignar el valor de Score a cada documento cuando la
+        query emplea operadores de búsqueda. Para cada documento aplica la función de los
+        operadores de búsqueda correspondientes lo que devuelve un factor que modifica el
+        score (dado por similitud de cosenos) entre el documento y la query.
+    \item public DocumentVector[] Ranking { get;}
+        Propiedad que devuelve un arreglo de vectores-documentos organizados en orden
+        decreciente, según su valor de Score, constituido por todos los documentos cuyo score
+        sea mayor que 0.
+    \item public HashSet<string> stopWords { get;}
+        Conjunto de las stopWords. Se decidió como stopword aquellas palabras aparezcan en
+        más del 85\% de los documentos.
+\end{enumerate}
+
+
+\subsection{DocumentVector:}
+Esta clase representa a cada documento como un vector de sus términos
+a la vez que contiene información útil del documento y métodos necesarios en la concepción
+del modelo.
+\emph{Elementos de la clase:}
+\begin{enumerate}
+    \item public string FileName {get; set; }
+    Contiene el título del documento.
+    \item public string FileText {get; private set; }
+    Contiene el texto del documento.
+    \item public string[] Terms{ get;}
+    Vector de todas las palabras del documento (con repeticiones). Se emplea para conocer el
+    tamaño del documento en palabras, la cantidad de repeticiones de cada palabra y en otros puntos
+    del proyecto como el snippet y los operadores.
+    \item HashSet<string> words;
+    Conjunto de todas las palabras del documento (sin repeticiones)
+    \item public HashSet<string> Words { get { return this.words; } }
+    Propiedad que regula el acceso al campo words.
+    \item Dictionary<string, int> docTermFrequency;
+    Diccionario que a cada palabra del documento le asigna su valor de frecuencia relativa.
+    \item double[] weights;
+    Representa el vector de coordenadas del documento en el espacio de los términos del corpus
+    donde el peso esta dado por el factor TF-IDF y cada término es una dimensión del espacio.
+    \item public double Score { get; set; }
+    Propiedad que contiene el valor de Score del documento con respecto a la query dada por la
+    Similitud de Cosenos.
+    \item double magnitude;
+    Norma del vector de pesos.
+    \item HashSet<int> nonZeroIndexes;
+    Almacena los índices del vector con valor distinto de 0 para optimizar los cálculos.11. Constructor de la clase 
+    DocumentVector, el texto del documento como parámetro. Inicializa y da
+    valores a otros campos de la clase.
+    \item public DocumentVector(string docText) {}
+    Constructor de la clase DocumentVector, el texto del documento como parámetro. Inicializa y da
+    valores a otros campos de la clase.
+    \item public void SetWeightsInCorpus(HashSet<string> corpusWords,Dictionary<string, double> idfs) {}
+     Recibe el vocabulario del corpus con los idf de todos los términos, inicializa el array weights que
+    expresa al documento como un vector donde cada coordenada es un término del corpus y cada
+    valor es el peso dado por tf-idf.
+    \item public void Normalize() {}
+    Normaliza el vector dividiendo los valores por la norma.
+    \item public static double Similarity(DocumentVector v1, DocumentVector v2){}
+    Aplica la fórmula de Similitud de Cosenos entre dos vectores.
+    \item public static string[] Tokenize(string text) {}
+    Método para extraer los tokens del texto. Divide el texto en palabras depurando todos los
+    caracteres que no sean letras o dígitos y devuelve el array de palabras.
+\end{enumerate}
+    
+
+\subsection{Snippet}
+Snippet: Clase estática que implementa un grupo de funciones para generar el
+snippet.
+\emph{Elementos de la clase:}
+\begin{enumerate}
+    \item static string documentText;
+    Contiene el texto del documento.
+    \item static string lowerText;
+    Aplica el método ToLower() al texto.
+    \item public static string GetSnippet(DocumentVector queryVector,
+    DocumentVector docVector){}
+    Método principal de la clase. Recibe el vector de la query y el del documento y
+    genera un snippet que muestra un subtexto del documento que contiene la palabra
+    de mayor relevancia de la query para el texto.
+    \item static string MostRelevantWord(DocumentVector queryVector,
+    DocumentVector docVector)
+    Método de que determina la palabra de mayor relevancia de la query. Empleando
+    operaciones entre conjuntos, específicamente la intersección, interseca las palabras de la query, 
+    el documento y el vocabulario (este último para eliminar
+    stopwords) y de las palabras resultantes determina la de mayor peso (TF*IDF).
+    \item static string GetTextPieceAround(int index)
+    Este método extrae un subtexto alrededor de la primera aparición en el texto de la
+    palabra determinada en el paso anterior, de un tamaño mayor o igual a 80
+    caracteres.
+    \item public static int GetIndexOf(string word)
+    Determina el primer índice donde aparece la palabra más relevante.
+    \item static int SentenceBeginning(int start)
+    Determina el inicio de una oración a partir de los signos de puntuación que pueden
+    delimitar la misma.
+    \item static int SentenceEnding(int start)
+    Determina el fin de una oración a partir de los signos de puntuación que pueden
+    delimitar la misma.
+    \item static string MyTrim(string text)
+    Método que elimina los espacios en blanco innecesarios en el snippet.
+\end{enumerate}
+
+\subsection{SearchOperators}
+SearchOperators: Clase estática que define e implementa los operadores de
+búsqueda.
+\emph{Elementos de la clase:}
+\begin{enumerate}
+    \item static HashSet<char> operators = new HashSet<char>("~!^*");
+    Define el conjunto de símbolos que representan los operadores.
+    \item static HashSet<(string word, int count)> importanceMarkers;
+    Contiene las palabras que constituyen operandos del operador Importancia (*).
+    \item static HashSet<string> existenceMarkers;
+    Contiene las palabras que constituyen operandos del operador Existe (^).
+    \item static HashSet<string> nonExistenceMarkers;
+     Contiene las palabras que constituyen operandos del operador No Existe (!).
+     \item static HashSet<(string, string)> distanceMarkers;
+    Contiene las palabras que constituyen operandos del operador Distancia (~).
+    \item public static bool[] operationsSwitch;
+    Vector booleano que regula cuales operaciones se deben realizar según la query.
+    \item public static bool QueryContainsOperators(string query);
+    Método para determinar si la query emplea operadores de búsqueda.
+    \item public static void SetMarkers(string query);
+    Métodos que determina los marcadores (palabras operandos) en la query.
+    \item private static string TakeWord(string input);
+    Este método separa las palabras de los operadores.
+    \item public static float ApplySearchOperators(DocumentVector doc);
+    Método principal, se encarga de implementar los operadores de búsqueda
+\end{enumerate}
+
+\subsection{Moogle}
+Moogle: La clase estática Moogle contiene los métodos que se ejecutan al iniciar el
+proyecto y desarrollar, es el código que guía la ejecución del programa coordinando al
+resto de las clases y métodos.
+\emph{Elementos de la clase:}
+\begin{enumerate}
+
+\item public static Corpus corpus;
+    La variable estática corpus permitirá a otras clases acceder a los elementos del
+    corpus como el vocabulario, los idfs de los términos y el sistema de vectores.
+\item public static void SetCorpus()
+    Este método se invoca al ejecutar el proyecto. Establece el corpus y lo guarda en
+    la variable estática 1.
+\item public static SearchResult Query(string query)
+    Se invoca al presionar el botón búsqueda en la aplicación. A través de este método
+    se recibe la query del usuario, esta se transforma en un vector y se establece su
+    similitud con cada documento, se genera el snippet y se forma el resultado final de
+    la búsqueda
+\end{enumerate}
+
+\subsection{SearchItem}
+SearchItem: Es el objeto mediante la cual se representa cada resultado de búsqueda,
+conformada por el título del documento, el valor de Score y el snippet generado.
+
+\emph{Elementos de la clase:}
+\begin{enumerate}
+    \item public string Title { get; private set; }
+    \item public string Snippet { get; private set; }
+    \item public double Score { get; private set; }
+    \item public SearchItem(string title, string snippet, double score)
+\end{enumerate}
+
+
+\subsection{SearchItem}
+SearchResult: Este objeto representa el resultado general de la búsqueda, es la
+colección de resultados individuales (search items). Además dentro de esta clase se
+implementa la funcionalidad Sugerencia a partir de métodos estáticos.
+
+\emph{Elementos de la clase:}
+\begin{enumerate}
+    \item private SearchItem[] items;
+    Arreglo de SearchItem, coleccion de los resultados individuales de la búsqueda
+    \item public SearchResult(SearchItem[] items, string suggestion="")
+    Constructor de la clase, genera el resultado de la búsqueda
+    \item public string Suggestion { get; private set; }
+    Sugerencia de la busqueda
+    \item public SearchResult() : this(new SearchItem[0]) {}
+    Constructor alternativo empleado cuando no se obtuvieron resultados en la búsqueda
+    \item public IEnumerable<SearchItem> Items() => this.items;
+    \item public int Count { get { return this.items.Length; } }
+    Propiedad que devuelve la cantidad de elementos del resultado de la búsqueda
+    \item public static string Suggestion(DocumentVector query)
+    Sugerencia de la búsqueda
+    \item private static string MostSimilarWordInCorpus(string term)
+    Método para la sugerencia, encuentra,entre las palabras del corpus, la más similar 
+    a otra palabra dada como argumento
+    \item private static int EditDistance(string s1, string s2, int m ,int n)
+    Calcula la distancia de Edición entre dos strings.
+
+\section{Desarrollo}
+\subsection{Estableciendo el Corpus}
+Al ejecutarse el proyecto, mediante el paso anterior, automáticamente se llama al método public
+static void SetCorpus() de la clase Moogle que se encarga de preprocesar la colección de docuementos y establecer el corpus.
+El corpus es una instancia de la clase Corpus, el mismo recibe en su creación la ubicación de
+la colección de documentos ContentPath, carga todos los archivos de este directorio que
+contengan la el patrón “.txt”; inicializa el vocabulario de términos, el diccionario idfs, y el array
+vectorList.
+Mediante un ciclo for, para cada documento de la colección:
+\begin{enumerate}
+    \item Se lee el texto del mismo mediante el método File.ReadAllText() y a partir de este crea
+    un DocumentVector.
+    \begin{enumerate}
+        \item Las instancias de la clase documentVector reciben un texto en su constructor.
+        \item Procesa el texto, dividiéndolo en sus tokens(palabras) mediante el método
+        Tokenize()
+        \item Inicializa el set de palabras del documento \emph{words} y el diccionario
+        docTermFrequencies.
+        \item Calcula la frecuencia de todos los términos del documento.
+    \end{enumerate}
+    \item Asigna el nombre del archivo a la propiedad FileName del vector utilizando el método
+    GetFileName().
+    \item Llena el vocabulario de términos de la colección añadiendo los términos de cada
+    documento. Al emplear un HashSet como estructura de datos para esta tarea se evita la
+    repetición de palabras.
+\end{enumerate}
+    A continuación, se calcula el idf de cada palabra eliminando las stopwords. Se consideró stopword aquellas
+    palabras que aparecen en más del 85\% de los documentos.
+
+\begin{minted}{csharp}
+    // Calculate IDFs and remove stop words
+    var stopWordThreshold = Math.Log((double)100 / 85);
+    foreach (var term in this.vocabulary)
+    {
+        var idf = Math.Log(documents.Length / idfs[term]);
+        if (idf > stopWordThreshold)
+            idfs[term] = idf;
+        else
+        {
+            stopWords.Add(term);
+            idfs.Remove(term);
+            vocabulary.Remove(term);
+        }
+    }
+\end{minted}
+
+Se inicializan y calculan los vectores de pesos de los documentos con el método
+SetWeightInCorpus(), luego se normalizan los vectores de pesos, de esta forma no
+tenemos que realizar este paso durante la búsqueda , pues para hallar la similitud solamente restaría realizar el producto escalar.
+
+\begin{center}
+    \begin{equation}
+    sim(A, B) = \frac{\overrightarrow{A} * \overrightarrow{B}}{||A|| * ||B||}  \rightarrow sim(A, B) = \overrightarrow{A'} * \overrightarrow{B'}
+    \tag*{Producto Vectorial}
+    \end{equation}
+    \end{center}
+
+Donde A' y B' son los vectores normalizados.
+Luego se ejecuta la aplicación web en el navegador predetermiando donde el usuario introduce la query y presiona el botón
+búsqueda que invoca al método Query() de la clase Moogle. Esta toma como argumento la
+query introducida por el usuario y la transforma en un DocumentVector, calcula el array de pesos
+y lo normaliza. Luego calcula los scores de cada documento a partir de la similitud de cosenos.
+
+\subsection{Operadores de Búsqueda}
+La estructura de control if nos ayuda a determinar si la query contiene o no operadores de
+búsquedas.
+
+\begin{minted}{csharp}
+    if (SearchOperators.QueryContainsOperators(query))
+    {
+        SearchOperators.SetMarkers(query);
+        corpus.RankDocumentsWithOperators();
+    }
+
+\end{minted}
+
+
+El método booleano QueryContainsOperators(string query) crea un conjunto (HashSet) de los
+caracteres de la query y lo interseca con la variable estática operators que contiene los
+caracteres designados para los operadores. Si la interacción es vacía la query no contiene
+operadores y devuelve false, en caso contrario la query contiene operadores y devuelve true.
+Si la query contiene operadores se invoca el método SetMarkers (string query), este divide a la
+query en palabras, creando un array y analiza mediante el ciclo for el primer carácter da cada
+una de ellas en busca de operadores.
+Se ejecuta la estructura de control Switch, con el default continue, es decir, si el primer carácter
+no es ninguno de los operadores de búsqueda se pasa a la siguiente palabra de la query:
+
+\begin{minted}{csharp}
+    switch (firstChar)
+    {
+        case '!':
+            nonExistenceMarkers = new HashSet<string>();
+            nonExistenceMarkers.Add(TakeWord(term));
+            operationsSwitch[0] = true;
+            break;
+        case '^':
+            existenceMarkers = new HashSet<string>();
+            existenceMarkers.Add(TakeWord(term));
+            operationsSwitch[1] = true;
+            break;
+        case '*':
+            importanceMarkers = new HashSet<(string word, int count)>();
+            var word = TakeWord(term);
+            var count = 1;
+            for (var j = 1; j < term.Length; j++)
+            {
+                if (term[j] != '*') break;
+                count++;
+            }
+            (string, int) pair = (word, count);
+            importanceMarkers.Add(pair);
+            operationsSwitch[2] = true;
+
+            break;
+        case '~':
+            distanceMarkers = new HashSet<(string, string)>();
+            var marker1 = TakeWord(queryTerms[i - 1]);
+            var marker2 = TakeWord(term);
+            (string, string) marker = (marker1, marker2);
+            distanceMarkers.Add(marker);
+            operationsSwitch[3] = true;
+            break;  
+
+        default:
+            continue;
+    }
+\end{minted}
+
+
+En caso de que primer carácter sea un operador: se inicializa la variable estática
+correspondiente al operador ver \ref{sec: classes} y se la añade la palabra depurada
+con el método TakeWord(), se “activa” el operationSwitch en la posición correspondiente.
+El operationSwitch es un array de bools de cuatro elementos, uno para cada operador, cuando
+el método SetMarkers encuentra un operador asigna true a la posición correspondiente al
+operador en el array, esto nos ayudará a ¨recordar¨ que operadores debemos calcular más
+adelante.
+El operador * se pude emplear cualquier cantidad de veces consecutivas, por eso en su case
+empleamos un ciclo for y una variable auxiliar count para contar la cantidad de veces que se
+empleó.
+Al ser binario, el operador de distancia requiere dos operandos. En este case se toma la palabra
+que lo contine y la palabra anterior, se unen en una tupla y se guardan los pares de palabras
+en tuplas en la variable estática distanceMarkers.
+Luego se procede aplicar el método RankDocumentsWithOperators(queryVector):
+Empleando un ciclo for, para cada vector – documento, cuyos scores han sido calculado
+previamente según su similitud de cosenos con la query, se le aplica un modificador que
+consiste en multiplicar el score por un factor scoreModifier que se calcula con el método
+ApplySearchOperators (DocumentVector doc):
+Este método “decide” (if) que operadores se deben calcular “preguntándole” al operationSwitch;
+calcula y devuelve el scoreModifier que es la suma del aporte de cada uno de los operadores
+aplicados (ver Introducción). Para ello invoca los métodos auxilares ApplyXOp
+(DocumentVector doc) donde \emph{X} es el operador correspondiente.
+    %Piece of Code
+
+\subsection{Resultados:}    
+La propiedad Ranking del corpus nos devuelve un arreglo, ordenado de forma decreciente, con
+todos los vectores-documento con un score mayor que 0, todos ellos se mostraran como
+resultados de la búsqueda, en el orden mencionado, transformándolos antes a SearchItems.
+Para la generación del Snippet se llama al método Snippet.GetSnippet(queryVector, docVector),
+este determina la palabra de mayor importancia(peso) de la query que aparece en el
+documento,
+static string MostRelevantWord(DocumentVector queryVector, DocumentVector docVector)
+La ubica dentro del texto
+public static int GetIndexOf(string word)
+y extrae una ventana del texto alrededor de dicha palabra con el metodo static string GetTextPieceAround(int index) 
+
+\section{}
+
+\end{document}
