@@ -1,12 +1,12 @@
-\documentclass[a4paper,12pt,twocolumn]{article}
+\documentclass[a4paper,12pt]{article}
 \usepackage[spanish]{babel}
 \usepackage[left=2.5cm, right=2.5cm, top=3cm, bottom=3cm]{geometry}
 \usepackage{amsmath, amsthm, amssymb}
-\usepackage{minted}
 
 
 \begin{document}
-\title{Moogle!}
+\begin{titlepage}
+\title{ \textsc{\large Moogle!}}
 \author{Jocdan L. López Mantecón \\ Facultad de Matemáticas y Computación, Universidad de la Habana}
 \date{Julio \\ 2023}
 \maketitle
@@ -30,6 +30,7 @@ resaltan, además de los conocidos array<T>, las colecciones List<T> y HashSet<T
 destacándose este último por su elevado rendimiento temporal. También se estudió el tipo
 System.String y sus métodos para la generación de Snippets y las expresiones lambda
 \end{abstract}
+\end{titlepage}
 
 \section*{Objetivos}
 \begin{enumerate}
@@ -114,7 +115,7 @@ los vectores mediante la fórmula:
     \end{center}
 
 Donde A y B son los vectores que se están comparando, * representa el producto punto de los
-vectores, y ||A||, ||B|| representan las magnitudes de los mismos.
+vectores, y $||A||, ||B||$ representan las magnitudes de los mismos.
 El producto punto entre dos vectores es la suma de los productos de los componentes
 correspondientes de los vectores. La magnitud de un vector es la raíz cuadrada de la suma de
 los cuadrados de sus componentes. La similitud de cosenos se puede calcular directamente a
@@ -153,16 +154,16 @@ documento y el vector query obteniéndose el resultado de Score final. Cada oper
 (si aparece en la query) al valor final del scoreModifier.
     \begin{center}
     \begin{equation}
-       sM = 1.00 + \^ 𝒎𝒐𝒅 + !𝒎𝒐𝒅 +  *𝒎𝒐𝒅 + ~𝒎𝒐𝒅 
+       sM = 1.00 + \wedge mod + !mod +  *mod + ~mod
     \end{equation}
     \end{center}
 
 Se implementaron cuatro operadores de búsqueda:
 \begin{enumerate}
-    \item  Existe ^ : Las palabras a la que se aplica a este operador debe aparecer en los
-    documentos que se muestran como resultados de la búsqueda. Si el documento a
-    evaluar no contine la palabra-operando (a las cuales se denominó markers) se
-    disminuye su score en un 100\%, en caso contrario permanece inalterado:
+    \item  Existe $\wedge$ : Las palabras a la que se aplica a este operador debe aparecer en los
+    documentos que se muestran como resultados de la busqueda. Si el documento a
+    evaluar no contine la palabra operando (a las cuales se denominaron markers) se
+    disminuye su score en un 100$\%$ , en caso contrario permanece inalterado:
 
     \item NoExiste ! : Los marcadores de este operador no deben aparecer en los resultados de
     búsqueda. Si el documento contiene dicho marcador disminuye su score en 100\% en
@@ -173,7 +174,7 @@ Se implementaron cuatro operadores de búsqueda:
     los marcadores de este operador en un 35\%.
         \begin{center}
         \begin{equation}
-            *𝒎𝒐𝒅 = N * 0.35
+            *mod = N * 0.35
         \end{equation}
         \end{center}
 
@@ -187,7 +188,7 @@ Se implementaron cuatro operadores de búsqueda:
     documento. La función que caracteriza este operador es:
         \begin{center}
         \begin{equation}
-            ~𝒎𝒐𝒅 = 1.00 - \frac{dist(w_1,w_2)}{doc.Length}
+            ~mod = 1.00 - \frac{dist(w_1,w_2)}{doc.Length}
         \end{equation}
         \end{center}
     Donde $dist(w_1, w_2)$ es la menor distancia entre las dos palabras en el
@@ -211,7 +212,7 @@ que se necesitan para convertir uno de los strings en el otro.
 
 \subsection{Especifiaciones de Software}
 EL proyecto se desarrolló en el Sistema Operativo Windows 10 Pro y fue codificado en el editor
-de texto Visual Studio Code empleando C# como lenguaje de programación y el framework
+de texto Visual Studio Code empleando C\# como lenguaje de programación y el framework
 .NET SDK 7. 
 
 \subsection{Ejecutando el proyecto}
@@ -361,12 +362,12 @@ SearchOperators: Clase estática que define e implementa los operadores de
 búsqueda.
 \emph{Elementos de la clase:}
 \begin{enumerate}
-    \item static HashSet<char> operators = new HashSet<char>("~!^*");
+    \item static HashSet<char> operators = new HashSet<char>("~!\^*");
     Define el conjunto de símbolos que representan los operadores.
     \item static HashSet<(string word, int count)> importanceMarkers;
     Contiene las palabras que constituyen operandos del operador Importancia (*).
     \item static HashSet<string> existenceMarkers;
-    Contiene las palabras que constituyen operandos del operador Existe (^).
+    Contiene las palabras que constituyen operandos del operador Existe (\^).
     \item static HashSet<string> nonExistenceMarkers;
      Contiene las palabras que constituyen operandos del operador No Existe (!).
      \item static HashSet<(string, string)> distanceMarkers;
@@ -441,8 +442,10 @@ implementa la funcionalidad Sugerencia a partir de métodos estáticos.
     a otra palabra dada como argumento
     \item private static int EditDistance(string s1, string s2, int m ,int n)
     Calcula la distancia de Edición entre dos strings.
+\end{enumerate}
 
 \section{Desarrollo}
+
 \subsection{Estableciendo el Corpus}
 Al ejecutarse el proyecto, mediante el paso anterior, automáticamente se llama al método public
 static void SetCorpus() de la clase Moogle que se encarga de preprocesar la colección de docuementos y establecer el corpus.
@@ -471,52 +474,6 @@ Mediante un ciclo for, para cada documento de la colección:
     A continuación, se calcula el idf de cada palabra eliminando las stopwords. Se consideró stopword aquellas
     palabras que aparecen en más del 85\% de los documentos.
 
-\begin{minted}{csharp}
-    // Calculate IDFs and remove stop words
-    var stopWordThreshold = Math.Log((double)100 / 85);
-    foreach (var term in this.vocabulary)
-    {
-        var idf = Math.Log(documents.Length / idfs[term]);
-        if (idf > stopWordThreshold)
-            idfs[term] = idf;
-        else
-        {
-            stopWords.Add(term);
-            idfs.Remove(term);
-            vocabulary.Remove(term);
-        }
-    }
-\end{minted}
-
-Se inicializan y calculan los vectores de pesos de los documentos con el método
-SetWeightInCorpus(), luego se normalizan los vectores de pesos, de esta forma no
-tenemos que realizar este paso durante la búsqueda , pues para hallar la similitud solamente restaría realizar el producto escalar.
-
-\begin{center}
-    \begin{equation}
-    sim(A, B) = \frac{\overrightarrow{A} * \overrightarrow{B}}{||A|| * ||B||}  \rightarrow sim(A, B) = \overrightarrow{A'} * \overrightarrow{B'}
-    \tag*{Producto Vectorial}
-    \end{equation}
-    \end{center}
-
-Donde A' y B' son los vectores normalizados.
-Luego se ejecuta la aplicación web en el navegador predetermiando donde el usuario introduce la query y presiona el botón
-búsqueda que invoca al método Query() de la clase Moogle. Esta toma como argumento la
-query introducida por el usuario y la transforma en un DocumentVector, calcula el array de pesos
-y lo normaliza. Luego calcula los scores de cada documento a partir de la similitud de cosenos.
-
-\subsection{Operadores de Búsqueda}
-La estructura de control if nos ayuda a determinar si la query contiene o no operadores de
-búsquedas.
-
-\begin{minted}{csharp}
-    if (SearchOperators.QueryContainsOperators(query))
-    {
-        SearchOperators.SetMarkers(query);
-        corpus.RankDocumentsWithOperators();
-    }
-
-\end{minted}
 
 
 El método booleano QueryContainsOperators(string query) crea un conjunto (HashSet) de los
@@ -528,48 +485,6 @@ query en palabras, creando un array y analiza mediante el ciclo for el primer ca
 una de ellas en busca de operadores.
 Se ejecuta la estructura de control Switch, con el default continue, es decir, si el primer carácter
 no es ninguno de los operadores de búsqueda se pasa a la siguiente palabra de la query:
-
-\begin{minted}{csharp}
-    switch (firstChar)
-    {
-        case '!':
-            nonExistenceMarkers = new HashSet<string>();
-            nonExistenceMarkers.Add(TakeWord(term));
-            operationsSwitch[0] = true;
-            break;
-        case '^':
-            existenceMarkers = new HashSet<string>();
-            existenceMarkers.Add(TakeWord(term));
-            operationsSwitch[1] = true;
-            break;
-        case '*':
-            importanceMarkers = new HashSet<(string word, int count)>();
-            var word = TakeWord(term);
-            var count = 1;
-            for (var j = 1; j < term.Length; j++)
-            {
-                if (term[j] != '*') break;
-                count++;
-            }
-            (string, int) pair = (word, count);
-            importanceMarkers.Add(pair);
-            operationsSwitch[2] = true;
-
-            break;
-        case '~':
-            distanceMarkers = new HashSet<(string, string)>();
-            var marker1 = TakeWord(queryTerms[i - 1]);
-            var marker2 = TakeWord(term);
-            (string, string) marker = (marker1, marker2);
-            distanceMarkers.Add(marker);
-            operationsSwitch[3] = true;
-            break;  
-
-        default:
-            continue;
-    }
-\end{minted}
-
 
 En caso de que primer carácter sea un operador: se inicializa la variable estática
 correspondiente al operador ver \ref{sec: classes} y se la añade la palabra depurada
@@ -593,20 +508,15 @@ Este método “decide” (if) que operadores se deben calcular “preguntándol
 calcula y devuelve el scoreModifier que es la suma del aporte de cada uno de los operadores
 aplicados (ver Introducción). Para ello invoca los métodos auxilares ApplyXOp
 (DocumentVector doc) donde \emph{X} es el operador correspondiente.
-    %Piece of Code
-
+    
+    
 \subsection{Resultados:}    
 La propiedad Ranking del corpus nos devuelve un arreglo, ordenado de forma decreciente, con
 todos los vectores-documento con un score mayor que 0, todos ellos se mostraran como
 resultados de la búsqueda, en el orden mencionado, transformándolos antes a SearchItems.
 Para la generación del Snippet se llama al método Snippet.GetSnippet(queryVector, docVector),
 este determina la palabra de mayor importancia(peso) de la query que aparece en el
-documento,
-static string MostRelevantWord(DocumentVector queryVector, DocumentVector docVector)
-La ubica dentro del texto
-public static int GetIndexOf(string word)
-y extrae una ventana del texto alrededor de dicha palabra con el metodo static string GetTextPieceAround(int index) 
+documento, La ubica dentro del texto y extrae una ventana del texto alrededor de dicha palabra con el metodo static string GetTextPieceAround(int index) 
 
-\section{}
 
 \end{document}
